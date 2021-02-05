@@ -5,10 +5,17 @@ package Download.Manager.Controller;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
+import org.mapdb.MapExtra;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 
@@ -20,6 +27,13 @@ public class OKHttp {
     static byte[] bytes;
     FileOutputStream fileOutputStream = null;
     static String filename;
+    static DB db= DBMaker.fileDB("lists.db")
+            .checksumHeaderBypass()
+            .transactionEnable()
+            .closeOnJvmShutdown()
+            .make();
+    static Map<String, byte[]> list;
+    static String url;
     public int request(String downloadUrl) throws Exception {
 
         client = new OkHttpClient();
@@ -33,6 +47,7 @@ public class OKHttp {
         }
         length= Math.toIntExact(response.body().contentLength());
         bytes=new byte[length];
+        url=downloadUrl;
         filename=getFileName(downloadUrl);
         savedir=saveDir+ File.separator+filename;
         response.body().close();
@@ -75,5 +90,64 @@ public class OKHttp {
         String fileName;
         fileName = downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1);
         return fileName;
+    }
+    public static void save()
+    {
+        openDB();
+        list.put(url,bytes);
+        closeDB();
+    }
+    public static void closeDB()
+    {
+        db.commit();
+//        db.close();
+    }
+    public static void openDB()
+    {
+        list = (Map<String, byte[]>) db.hashMap("list")
+                .createOrOpen();
+    }
+    public Set<String> list()
+    {
+        openDB();
+        Set<String> filenames=list.keySet();
+        closeDB();
+        return filenames;
+    }
+    public static Map<Integer, Integer> downloadrange(String url)
+    {
+        byte[] bytes=list.get(url);
+        int start=0,end=0;
+        int counter=0;
+        Map<Integer, Integer> ranges=new HashMap<>();
+        for(int i=0;i<bytes.length;i++)
+        {
+            if(bytes[i]==0)
+            {
+                counter++;
+                if(i==bytes.length-1)
+                {
+                    start++;
+                    end=(start+counter)-1;
+                    if(counter!=0)
+                    {
+                        ranges.put(start,end);
+                        counter=0;
+                    }
+                }
+            }
+            else if(bytes[i]!=0)
+            {
+                if(start!=0)start++;
+                end=(start+counter)-1;
+                if(counter!=0)
+                {
+                    ranges.put(start,end);
+                    counter=0;
+                }
+                start=i;
+            }
+        }
+        return ranges;
     }
 }

@@ -366,10 +366,14 @@ header #title {
 
 
 
+
+
     </style>
 
     <script>
   window.console = window.console || function(t) {};
+
+
 
 
 
@@ -381,6 +385,8 @@ header #title {
   if (document.location.search.match(/type=embed/gi)) {
     window.parent.postMessage("resize", "*");
   }
+
+
 
 
 
@@ -413,24 +419,6 @@ header #title {
             <i class="fas fa-trash-alt"></i>
         </div>
     </a>
-    <!--    <div class="separator"></div>-->
-    <!--    <div class="btn">-->
-    <!--        <i class="fas fa-step-backward ccw-90"></i>-->
-    <!--    </div>-->
-    <!--    <div class="btn">-->
-    <!--        <i class="fas fa-play cw-90 smaller"></i>-->
-    <!--    </div>-->
-    <!--    <div class="btn">-->
-    <!--        <i class="fas fa-play ccw-90 smaller"></i>-->
-    <!--    </div>-->
-    <!--    <div class="btn">-->
-    <!--        <i class="fas fa-step-forward ccw-90"></i>-->
-    <!--    </div>-->
-    <!--    <div class="btn right">-->
-    <!--        <i class="fas fa-cog"></i>-->
-    <!--    </div>-->
-
-    <!--    <div class="clear"></div>-->
 </div>
 
 <div id="content">
@@ -455,21 +443,46 @@ header #title {
         </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>
-                    <span  th:text="${threadnum}"></span>
-                </td>
-                <td>
+        <tr>
+            <td>
+                <span th:text="${threadnum}"></span>
+            </td>
+            <td>
 
-                    <span  th:text="${Name}"></span>
-                </td>
-                <td>
-                    <span  th:text="${size}"></span>
-                </td>
-                <td>
-                    <span  th:text="${Range}"></span>
-                </td>
+                <span th:text="${Name}"></span>
+            </td>
+            <td>
+                <span th:text="${size}"></span>
+            </td>
+            <td>
+                <span th:text="${Range}"></span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <table>
+        <thead>
+        <tr>
+            <th style="width:80%">file name</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <div th:each="file : ${files}">
+            <tr>
+                <form action="/continue" method="post">
+                    <td>
+                        <span th:text="${file}"></span>
+                        <input type="hidden" class="form__field" th:value="${file}" placeholder="Name" name="URL"/>
+                    </td>
+                    <td>
+                        <div class="download-all">
+                            <input type="submit" value="continue">
+                        </div>
+                    </td>
+                </form>
             </tr>
+        </div>
         </tbody>
     </table>
 </div>

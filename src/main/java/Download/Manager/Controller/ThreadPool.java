@@ -1,10 +1,9 @@
 package Download.Manager.Controller;
 
-import com.squareup.okhttp.OkHttpClient;
-
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
+import static Download.Manager.Controller.OKHttp.save;
 
 public class ThreadPool {
     String url;
@@ -106,7 +105,8 @@ public class ThreadPool {
     }
     public  void stop() throws InterruptedException {
         // thread group interrupted
-        System.out.println("pause " + pause);
+        System.out.println("stop " + pause);
+        save();
         synchronized (threadGroup) {
                 System.out.println(threadGroup.activeCount() + "stop");
                 threadGroup.stop();
@@ -140,6 +140,65 @@ public class ThreadPool {
         else
             threadnum=7;
         return threadnum;
+    }
+    public void continuedownload() throws Exception {
+        Map<Integer, Integer> ranges=OKHttp.downloadrange(url);
+        threadnum=ranges.size();
+        OKHttp okHttp=new OKHttp();
+        int length = okHttp.request(url);
+        downloaddetail.put("threadnum ", String.valueOf(threadnum));
+        downloaddetail.put("Name ", OKHttp.filename);
+        threadGroup = new ThreadGroup("new Group");
+        thread = new Thread[threadnum];
+        Set<Integer> srange= ranges.keySet();
+        Integer[] startrange=srange.toArray(new Integer[srange.size()]);
+        Collection<Integer> erange= ranges.values();
+        Integer[] endrange=erange.toArray(new Integer[erange.size()]);
+        for (int i = 0; i < threadnum; i++) {
+            int finalI = i;
+            thread[i] = new Thread(threadGroup,new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        OKHttp ok=new OKHttp();
+                        int start, end;
+                        start = startrange[finalI];
+                        end = endrange[finalI];
+                        downloaddetail.put("Range", String.valueOf(end-start));
+                        System.out.println("ranges for thread" + finalI + " : from " + start + " to " + end);
+                        ok.range(url,start, end,finalI);
+                        System.out.println("ok");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            thread[i].setName("Thread-"+i);
+            thread[i].start();
+            System.out.println(threadGroup.activeCount() + " threads in thread group...");
+        }
+        System.out.println(threadGroup.activeCount() + " threads in thread group...");
+        for (int i = 0; i < threadnum; i++) {
+            thread[i].join();
+            System.out.println("join");
+        }
+        int count=0;
+        for(int i=0;i<threadnum;i++)
+        {
+            if(thread[i].getState()== Thread.State.TERMINATED)
+            {
+                count++;
+            }
+        }
+        if(count==threadnum && !stop)
+        {
+            OKHttp ok = new OKHttp();
+            ok.write();
+            OKHttp.list.remove(url);
+        }
+        stop=false;
+        System.out.println(threadGroup.activeCount() + " threads in thread group...");
+
     }
 
 }
