@@ -100,7 +100,6 @@ public class OKHttp {
     public static void closeDB()
     {
         db.commit();
-//        db.close();
     }
     public static void openDB()
     {
